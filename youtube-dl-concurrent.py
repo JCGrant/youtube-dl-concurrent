@@ -1,7 +1,12 @@
 import asyncio
+import bs4
+import os
+import requests
 import sys
 from tqdm import tqdm
 import youtube_dl
+
+BASE_DOWNLOAD_DIR = os.getcwd() + '/downloads/'
 
 bars = {}
 
@@ -15,16 +20,24 @@ def update_tqdm(information):
         bar = bars[filename]
         bar.update(downloaded - bar.n)
 
-ydl_opts = {
-    'format': 'mp4',
-    'quiet': True,
-    'progress_hooks': [
-        update_tqdm,
-    ],
-}
-ydl = youtube_dl.YoutubeDL(ydl_opts)
-
 def download(video_url):
+    r = requests.get(video_url)
+    soup = bs4.BeautifulSoup(r.text, 'html5lib')
+    channel_name = soup.find('div', { 'class': 'yt-user-info'}).text.strip()
+    download_dir = BASE_DOWNLOAD_DIR + channel_name + '/'
+
+    if not os.path.isdir(download_dir):
+        os.makedirs(download_dir)
+
+    ydl_opts = {
+        'format': 'mp4',
+        'quiet': True,
+        'progress_hooks': [
+            update_tqdm,
+        ],
+        'outtmpl' : download_dir + '%(title)s.%(ext)s'
+    }
+    ydl = youtube_dl.YoutubeDL(ydl_opts)
     ydl.download([video_url])
 
 if len(sys.argv) < 2:
