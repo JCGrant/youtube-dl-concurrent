@@ -20,7 +20,7 @@ def update_tqdm(information):
         bar = bars[filename]
         bar.update(downloaded - bar.n)
 
-def download(video_url):
+def download(video_url, prefix=''):
     r = requests.get(video_url)
     soup = bs4.BeautifulSoup(r.text, 'html5lib')
     channel_name = soup.find('div', { 'class': 'yt-user-info'}).text.strip()
@@ -35,7 +35,7 @@ def download(video_url):
         'progress_hooks': [
             update_tqdm,
         ],
-        'outtmpl' : download_dir + '%(title)s.%(ext)s'
+        'outtmpl' : download_dir + prefix + '%(title)s.%(ext)s'
     }
     ydl = youtube_dl.YoutubeDL(ydl_opts)
     ydl.download([video_url])
@@ -53,8 +53,9 @@ tasks = [
     loop.run_in_executor(
         None,
         download,
-        video_url
-    ) for video_url in urls
+        video_url,
+        str(i)
+    ) for i, video_url in enumerate(urls)
 ]
 loop.run_until_complete(asyncio.wait(tasks))
 
